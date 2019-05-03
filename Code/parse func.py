@@ -15,23 +15,29 @@ def parse(filename):
     entry[eName] = rest
   yield entry
 
-index=list()
-itemCounter =0
-inserCounter =0
-item = "\"review/text\": \""
-for e in parse("Cell_Phones_&_Accessories.txt.gz"):
-    ent= simplejson.dumps(e)
-    start=ent.find(item)+len(item)
-    end = ent.find("\"}")
-    if start != -1:
-        reFormated=re.sub(r'[\"<>+=_@#%$&*}{~`.!,;?/|()^-]', " ",ent[start:end]).split()
-        itemCounter+=1
-        inserCounter+=len(reFormated)
+def format(filename):
+    index=list()
+    itemCounter =0
+    inserCounter =0
+    item = "\"review/text\": \""
+    for e in parse(filename):
+        ent= simplejson.dumps(e)
+        start=ent.find(item)+len(item)
+        end = ent.find("\"}")
+        if (itemCounter==1):
+            break
+        if start != -1:
+            reFormated=re.sub(r'[\"<>+=_@#%$&*}{~`.!,;?/|()^-]', " ",ent[start:end]).split()
+            itemCounter+=1
+            inserCounter+=len(reFormated)
+        print(reFormated)
+        for x in reFormated:
+            index.append(x)
+    return list(set(index))
 
-    for x in reFormated:
-        index.append(x)
 
-uniIndex=list(set(index))
+uniIndex = format("Shoes.txt.gz")
+print(uniIndex)
 
 int=list()
 for i in range(len(uniIndex)):
