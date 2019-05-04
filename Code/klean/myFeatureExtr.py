@@ -1,5 +1,7 @@
-import gzip, simplejson, re, pickle, nltk
-
+import gzip
+import simplejson
+import nltk
+from pattern.en import singularize
 
 def parse(filename):
     f = gzip.open(filename, 'r')
@@ -12,35 +14,64 @@ def parse(filename):
             entry = {}
             continue
         eName = l[:colonPos]
-        rest = l[colonPos + 2:]
+        rest = l[colonPos+2:]
         entry[eName] = rest
     yield entry
 
 
-def clear_sentence(txt):
-    txt = re.sub(r'[\"<>+=_@#%$&*}{~`/|()^]', '', txt)
-    txt = txt.replace('-', '')      # removes -
-    txt = txt.replace('\\', '')      # removes \
-    return txt
-
+# ---- MAIN ----
+pos_tags_file = open("pos_tags_file.txt", "w")  # a+ -> append
+nouns_file = open("nouns_file.txt", "w")        # a+ -> append
 
 index = list()
 itemCounter = 0
-inserCounter = 0
 item = "\"review/text\": \""
 
-FileToOpen = "Office_Products.txt.gz"  # enter File name
-for e in parse(FileToOpen):
+for e in parse("Shoes.txt.gz"):
     ent = simplejson.dumps(e)
-    start = ent.find(item) + len(item)
+    start = ent.find(item)+len(item)
     end = ent.find("\"}")
-    if itemCounter == 1:
+    if itemCounter == 10:
         break
-
-    sentence = clear_sentence(ent[start:end])
+    sentence = ent[start:end]
     if start != -1:
-        tokens = nltk.word_tokenize(sentence)
-        tagged = nltk.pos_tag(tokens)
-        print(tagged)
         itemCounter += 1
-        inserCounter += len(tokens)
+        tokens = nltk.word_tokenize(sentence)   # split sentence into words
+        tagged = nltk.pos_tag(tokens)   # tag tokens
+        # print(tagged)
+
+        is_noun = lambda pos: pos[:2] == 'NN'
+        nouns = [word for (word, pos) in tagged if is_noun(pos)]    # find nouns in sentence
+        # print(nouns)
+
+        for i in tagged:
+            pos_tags_file.write(repr(i) + "\n")
+        for i in nouns:
+            nouns_file.write(i.lower() + "\n")
+
+pos_tags_file.close()
+nouns_file.close()
+
+Dictionary = open("dictionary.txt", "w")
+nouns_file = open("nouns_file.txt", "r")
+lineCount = 0
+for line in open("nouns_file.txt").readlines(): lineCount += 1
+
+d = dict()
+for i in range(lineCount):
+    content = nouns_file.readline().rstrip()    # read new line without "\n"
+    content = singularize(content)  # plural to singular
+
+    if content not in d:
+        d[content] = 1
+    else:
+        d[content] = d[content] + 1
+
+d = sorted(d.items(), key=lambda kv: kv[1], reverse=True)
+print(d)
+
+for i in d:
+    Dictionary.write(repr(i) + "\n")
+
+Dictionary.close()
+
