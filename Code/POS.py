@@ -26,14 +26,16 @@ for e in parse("Shoes.txt.gz"):
     ent= simplejson.dumps(e)
     start=ent.find(item)+len(item)
     end = ent.find("\"}")
+    '''
     if (itemCounter==1):
         break
+    '''
     sentence = ent[start:end]
     if start != -1:
         tokens = nltk.word_tokenize(sentence)
-        print(tokens)
+        'print(tokens)'
         tagged = nltk.pos_tag(tokens)
-        print(tagged)
+        'print(tagged)'
         itemCounter+=1
         inserCounter+=len(tokens)
         for i in tagged:
