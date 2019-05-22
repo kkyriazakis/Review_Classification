@@ -2,6 +2,20 @@ import gzip
 import simplejson
 import re
 from nltk.corpus import stopwords
+import pandas as pd
+import numpy as np
+import tensorflow as tf
+import re
+from nltk.corpus import stopwords
+import time
+from tensorflow.python.layers.core import Dense
+from tensorflow.python.ops.rnn_cell_impl import _zero_state_tensors
+import gzip
+import simplejson
+import json
+import _pickle as pickle
+import nltk
+
 
 # Source: http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
 contractions = {
@@ -96,14 +110,12 @@ def parse(filename):
         entry[eName] = rest
     yield entry
 
-
 def remove_unwanted_char(txt):
     txt = re.sub(r'[\"\'<>+=_@#%$&*}{~`/|()^.,]', '', txt)
     txt = txt.replace('-', '')   # removes -
     txt = txt.replace('\\', '')  # removes \
     txt = " ".join(txt.split())  # removes multiple spaces
     return txt
-
 
 def clean_text(sent, lab, remove_stopwords=True):
     sent = sent.lower()  # lowercase sentence
@@ -140,12 +152,25 @@ def clean_text(sent, lab, remove_stopwords=True):
 
     return sent, lab
 
+def count_words(count_dict, text):
+    '''Count the number of occurrences of each word in a set of text'''
+    for sentence in text:
+        for word in sentence.split():
+            if word not in count_dict:
+                count_dict[word] = 1
+            else:
+                count_dict[word] += 1
+
+
 
 itemCounter = 0
 # ---- MAIN ----
 file = "Watches.txt.gz"
 label_start = "\"review/summary\": \""
 review_start = "\"review/text\": \""
+sentences = []
+labels = []
+threshold=2
 
 for e in parse(file):
     ent = simplejson.dumps(e)
@@ -158,12 +183,86 @@ for e in parse(file):
     s_end = ent.find("\"}")
     sentence = ent[s_start:s_end]  # extract review
 
-    if itemCounter == 1:
-        break
     if s_start != -1 and l_start != -1:
-        itemCounter += 1
+
         sentence, label = clean_text(sentence, label, remove_stopwords=True)
         # sentence einai olo to review ka8arismeno
         # label einai to summary ka8arismeno
-        print(sentence)
-        print("\n" + label)
+        sentences.append(sentence)
+        labels.append(label)
+        itemCounter += 1
+
+word_dict={}
+
+count_words(word_dict,sentences)
+count_words(word_dict, labels)
+
+print("Size of Vocabulary:", len(word_dict))
+with open('Vocabulary','wb') as fp:
+    pickle.dump(word_dict,fp)
+
+
+# embeddings_index = {}
+# with open('numberbatch.txt', encoding='utf-8') as f:
+#     for line in f:
+#         values = line.split(' ')
+#         word = values[0]
+#         embedding = np.asarray(values[1:], dtype='float32')
+#         embeddings_index[word] = embedding
+#
+# print('Word embeddings:', len(embeddings_index))
+#
+#
+# with open('embIndex_pickle','wb') as fp:
+#     pickle.dump(embeddings_index,fp)
+
+with open('embIndex_pickle','rb') as fp:
+    embeddings_index=pickle.load(fp)
+
+print(len(embeddings_index))
+
+vocab_to_int = {}
+
+value = 0
+for word, count in word_dict.items():
+    if count >= threshold or word in embeddings_index:
+        vocab_to_int[word] = value
+        value += 1
+
+# Special tokens that will be added to our vocab
+codes = ["<UNK>","<PAD>","<EOS>","<GO>"]
+
+# Add codes to vocab
+for code in codes:
+    vocab_to_int[code] = len(vocab_to_int)
+
+# Dictionary to convert integers to words
+int_to_vocab = {}
+for word, value in vocab_to_int.items():
+    int_to_vocab[value] = word
+
+usage_ratio = round(len(vocab_to_int) / len(word_dict),4)*100
+
+print("Total number of unique words:", len(word_dict))
+print("Number of words we will use:", len(vocab_to_int))
+print("Percent of words we will use: {}%".format(usage_ratio))
+
+
+embedding_dim = 300
+nb_words = len(vocab_to_int)
+
+# Create matrix with default values of zero
+word_embedding_matrix = np.zeros((nb_words, embedding_dim), dtype=np.float32)
+for word, i in vocab_to_int.items():
+    if word in embeddings_index:
+        word_embedding_matrix[i] = embeddings_index[word]
+    else:
+        # If word not in CN, create a random embedding for it
+        new_embedding = np.array(np.random.uniform(-1.0, 1.0, embedding_dim))
+        embeddings_index[word] = new_embedding
+        word_embedding_matrix[i] = new_embedding
+
+# Check if value matches len(vocab_to_int)
+print(len(word_embedding_matrix))
+with open('emb_matrix','wb') as fp:
+    pickle.dump(word_embedding_matrix,fp)
