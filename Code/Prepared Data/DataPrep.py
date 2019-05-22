@@ -1,8 +1,7 @@
 import gzip
 import simplejson
 import re
-import nltk
-from pattern.en import singularize
+from nltk.corpus import stopwords
 
 # Source: http://stackoverflow.com/questions/19790188/expanding-english-language-contractions-in-python
 contractions = {
@@ -132,6 +131,13 @@ def clean_text(sent, lab, remove_stopwords=True):
     sent = remove_unwanted_char(sent)
     lab = remove_unwanted_char(lab)
 
+    # Remove stop words from sentence only
+    if remove_stopwords:
+        stops = set(stopwords.words("english"))
+        sent = sent.split()
+        sent = [w for w in sent if not w in stops]
+        sent = " ".join(sent)
+
     return sent, lab
 
 
@@ -156,6 +162,6 @@ for e in parse(file):
         break
     if s_start != -1 and l_start != -1:
         itemCounter += 1
-        s, la = clean_text(sentence, label, remove_stopwords=True)
-        print(s)
-        print("\n" + la)
+        sentence, label = clean_text(sentence, label, remove_stopwords=True)
+        print(sentence)
+        print("\n" + label)
