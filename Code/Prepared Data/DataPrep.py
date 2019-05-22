@@ -163,5 +163,7 @@ for e in parse(file):
     if s_start != -1 and l_start != -1:
         itemCounter += 1
         sentence, label = clean_text(sentence, label, remove_stopwords=True)
+        # sentence einai olo to review ka8arismeno
+        # label einai to summary ka8arismeno
         print(sentence)
         print("\n" + label)
