@@ -270,23 +270,16 @@ with open('numberbatch.txt', encoding='utf-8') as f:
         word = values[0]
         embedding = np.asarray(values[1:], dtype='float32')
         embeddings_index[word] = embedding
-
 print('Word embeddings:', len(embeddings_index))
 
 with open('embIndex_pickle', 'wb') as fp:
     pickle.dump(embeddings_index, fp)
-
 with open('embIndex_pickle', 'rb') as fp:
     embeddings_index = pickle.load(fp)
 
 write('embIndex_pickle', embeddings_index)
 
-embeddings_index = read('embIndex_pickle')
-
-print(len(embeddings_index))
-
 vocab_to_int = {}
-
 value = 0
 for word, count in word_dict.items():
     if count >= threshold or word in embeddings_index:
