@@ -225,8 +225,6 @@ original_sentences = []
 labels = []
 threshold = 2
 
-stop=0
-
 for e in parse(file):
     ent = simplejson.dumps(e)
 
@@ -238,9 +236,6 @@ for e in parse(file):
     s_end = ent.find("\"}")
     sentence = ent[s_start:s_end]  # extract review
 	original_sentences.append(sentence)
-#    if stop==105:
-#        break
-#    stop=stop+1
 
     if s_start != -1 and l_start != -1:
         sentence, label = clean_text(sentence, label, remove_stopwords=True)
@@ -332,14 +327,12 @@ for word, i in vocab_to_int.items():
         word_embedding_matrix[i] = new_embedding
 
 # Check if value matches len(vocab_to_int)
-print(len(word_embedding_matrix))
+print("word_embedding_matrix size: ",len(word_embedding_matrix))
 with open('emb_matrix', 'wb') as fp:
     pickle.dump(word_embedding_matrix, fp)
 
 write('emb_matrix', word_embedding_matrix)
-
 word_embedding_matrix = read('emb_matrix')
-print(len(word_embedding_matrix))
 
 word_count = 0
 unk_count = 0
@@ -376,8 +369,10 @@ for length in range(min(lengths_texts.counts), max_text_length):
             sorted_texts.append(int_sentences[count])
 
 # Compare lengths to ensure they match
-print(len(sorted_summaries))
-print(len(sorted_texts))
+if(len(sorted_summaries) == len(sorted_texts)):
+    print("Summaries and texts lengths match")
+else:
+    print("Summaries and texts lengths DO NOT match")
 
 write('Sorted_labels', sorted_summaries)
 write('Sorted_data', sorted_texts)
