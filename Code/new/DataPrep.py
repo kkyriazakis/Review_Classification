@@ -101,7 +101,7 @@ def parse(filename):
 
 
 def remove_unwanted_char(txt):
-    txt = re.sub(r'[\"\'<>+=_@#%$&*}{~`/|()^.,]', '', txt)
+    txt = re.sub(r'[\"\'<>+=_@#%$!&*}{~`/|()^.,]', '', txt)
     txt = txt.replace('-', '')  # removes -
     txt = txt.replace('\\', '')  # removes \
     txt = " ".join(txt.split())  # removes multiple spaces
@@ -217,7 +217,7 @@ def unk_counter(sentence):
 
 itemCounter = 0
 # ---- MAIN ----
-file = "Cell_Phones_&_Accessories.txt.gz"
+file = "Arts.txt.gz"
 label_start = "\"review/summary\": \""
 review_start = "\"review/text\": \""
 sentences = []
@@ -235,8 +235,8 @@ for e in parse(file):
     s_start = ent.find(review_start) + len(review_start)
     s_end = ent.find("\"}")
     sentence = ent[s_start:s_end]  # extract review
-	original_sentences.append(sentence)
-
+    original_sentences.append(sentence)
+	
     if s_start != -1 and l_start != -1:
         sentence, label = clean_text(sentence, label, remove_stopwords=True)
         # sentence einai olo to review ka8arismeno
@@ -244,7 +244,7 @@ for e in parse(file):
         sentences.append(sentence)
         labels.append(label)
         itemCounter += 1
-
+    
 word_dict = {}
 
 write('Originals',original_sentences)
