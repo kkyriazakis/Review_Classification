@@ -1,19 +1,119 @@
-import gzip
-import re
-from nltk.corpus import stopwords
-import pandas as pd
 import numpy as np
 import tensorflow as tf
+import _pickle as pickle
 import re
 from nltk.corpus import stopwords
-import time
-from tensorflow.python.layers.core import Dense
-from tensorflow.python.ops.rnn_cell_impl import _zero_state_tensors
-import gzip
-import simplejson
-import json
-import _pickle as pickle
-import nltk
+
+contractions = { 
+"ain't": "am not",
+"aren't": "are not",
+"can't": "cannot",
+"can't've": "cannot have",
+"'cause": "because",
+"could've": "could have",
+"couldn't": "could not",
+"couldn't've": "could not have",
+"didn't": "did not",
+"doesn't": "does not",
+"don't": "do not",
+"hadn't": "had not",
+"hadn't've": "had not have",
+"hasn't": "has not",
+"haven't": "have not",
+"he'd": "he would",
+"he'd've": "he would have",
+"he'll": "he will",
+"he's": "he is",
+"how'd": "how did",
+"how'll": "how will",
+"how's": "how is",
+"i'd": "i would",
+"i'll": "i will",
+"i'm": "i am",
+"i've": "i have",
+"isn't": "is not",
+"it'd": "it would",
+"it'll": "it will",
+"it's": "it is",
+"let's": "let us",
+"ma'am": "madam",
+"mayn't": "may not",
+"might've": "might have",
+"mightn't": "might not",
+"must've": "must have",
+"mustn't": "must not",
+"needn't": "need not",
+"oughtn't": "ought not",
+"shan't": "shall not",
+"sha'n't": "shall not",
+"she'd": "she would",
+"she'll": "she will",
+"she's": "she is",
+"should've": "should have",
+"shouldn't": "should not",
+"that'd": "that would",
+"that's": "that is",
+"there'd": "there had",
+"there's": "there is",
+"they'd": "they would",
+"they'll": "they will",
+"they're": "they are",
+"they've": "they have",
+"wasn't": "was not",
+"we'd": "we would",
+"we'll": "we will",
+"we're": "we are",
+"we've": "we have",
+"weren't": "were not",
+"what'll": "what will",
+"what're": "what are",
+"what's": "what is",
+"what've": "what have",
+"where'd": "where did",
+"where's": "where is",
+"who'll": "who will",
+"who's": "who is",
+"won't": "will not",
+"wouldn't": "would not",
+"you'd": "you would",
+"you'll": "you will",
+"you're": "you are"
+}
+
+
+def clean_text(sent, remove_stopwords=True):
+    sent = sent.lower()  # lowercase sentence
+    
+    # replace contractions
+    sent = sent.split()
+    temp = []
+    for w in sent:
+        if w in contractions:
+            temp.append(contractions[w])
+        else:
+            temp.append(w)
+    sent = " ".join(temp)
+    
+    # remove unwanted characters contractions
+    sent = remove_unwanted_char(sent)
+	
+    # Remove stop words from sentence only
+    if remove_stopwords:
+        stops = set(stopwords.words("english"))
+        sent = sent.split()
+        sent = [w for w in sent if not w in stops]
+        sent = " ".join(sent)
+
+    return sent
+
+
+def remove_unwanted_char(txt):
+    txt = re.sub(r'[\"\'<>+=_@#%$!&*}{~`/|()^.,]', '', txt)
+    txt = txt.replace('-', '')  # removes -
+    txt = txt.replace('\\', '')  # removes \
+    txt = " ".join(txt.split())  # removes multiple spaces
+    return txt
+
 
 def read(file):
     with open(file, 'rb') as fp:
@@ -21,65 +121,29 @@ def read(file):
 
 
 def text_to_seq(text):
-    '''Prepare the text for the model'''
-    vocab_to_int=read('vocab_to_int')
-    #text = clean_text(text)
+    """Prepare the text for the model"""
+    vocab_to_int = read('vocab_to_int')
     return [vocab_to_int.get(word, vocab_to_int['<UNK>']) for word in text.split()]
 
-clean_texts=read('Cleaned_text')
 
-
-
-def clean_text(text, remove_stopwords=True):
-    '''Remove unwanted characters, stopwords, and format the text to create fewer nulls word embeddings'''
-    vocab_to_int = read('vocab_to_int')
-    # Convert words to lower case
-    text = text.lower()
-
-    # Replace contractions with their longer forms
-    if True:
-        text = text.split()
-        new_text = []
-        for word in text:
-            if word in contractions:
-                new_text.append(contractions[word])
-            else:
-                new_text.append(word)
-        text = " ".join(new_text)
-
-    # Format words and remove unwanted characters
-    text = re.sub(r'https?:\/\/.*[\r\n]*', '', text, flags=re.MULTILINE)
-    text = re.sub(r'\<a href', ' ', text)
-    text = re.sub(r'&amp;', '', text)
-    text = re.sub(r'[_"\-;%()|+&=*%.,!?:#$@\[\]/]', ' ', text)
-    text = re.sub(r'<br />', ' ', text)
-    text = re.sub(r'\'', ' ', text)
-
-    # Optionally, remove stop words
-    if remove_stopwords:
-        text = text.split()
-        stops = set(stopwords.words("english"))
-        text = [w for w in text if not w in stops]
-        text = " ".join(text)
-
-    return text
-
-# Set the Hyperparameters
-epochs = 100
-batch_size = 64
-rnn_size = 256
-num_layers = 2
-learning_rate = 0.0005
-keep_probability = 0.75
-random = np.random.randint(0,len(clean_texts))
-input_sentence = clean_texts[random]
-text = text_to_seq(clean_texts[random])
+clean_texts = read('Cleaned_text')
 vocab_to_int = read('vocab_to_int')
 int_to_vocab = read('int_to_vocab')
 
-checkpoint = "./best_model.ckpt"
+# Set the Hyperparameters
+batch_size = 64
 
+random = np.random.randint(0, len(clean_texts))
+input_sentence = clean_texts[random]
+
+# Or Enter Your own sentence Below ---------
+#input_sentence = clean_text("terrible  no registration code. I could not download", remove_stopwords=True)
+
+
+text = text_to_seq(input_sentence)
+checkpoint = "./best_model.ckpt"
 loaded_graph = tf.Graph()
+
 with tf.Session(graph=loaded_graph) as sess:
     # Load saved model
     loader = tf.train.import_meta_graph(checkpoint + '.meta')
