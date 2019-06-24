@@ -96,7 +96,7 @@ def clean_text(sent, remove_stopwords=True):
     
     # remove unwanted characters contractions
     sent = remove_unwanted_char(sent)
-	
+
     # Remove stop words from sentence only
     if remove_stopwords:
         stops = set(stopwords.words("english"))
@@ -135,7 +135,7 @@ batch_size = 64
 # input_sentence = clean_texts[random]
 
 # Or Enter Your own sentence Below ---------
-sentence = "This started out as a 5 star review. The Gear S3 paired with my Galaxy S6 flawlessly and worked well. Calls were clear, notifications from texts, Google Hangouts, etc worked great until November 2017 when an update took out notifications appearing on the watch screen. Incoming call and calendar notifications appear....but no texts. $300+ for a wearable that works in part is not of value. And there has been no effort from a Samsung to resolve the issue. Very disappointing."
+sentence = "This started out as a 5 star review. The Gear S3 paired with my Galaxy S6 flawlessly and worked well."
 input_sentence = clean_text(sentence, remove_stopwords=True)
 
 text = text_to_seq(input_sentence)
